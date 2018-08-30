@@ -1,48 +1,45 @@
 package bottalk
 
 import (
-	"fmt"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 )
 
 // Plugin is a main app
 type Plugin struct {
-	Name        string
-	Description string
-	Discovery   func(w http.ResponseWriter, r *http.Request)
-	Actions     []Action
+	Name        string            `json:"service"`
+	Description string            `json:"description"`
+	Actions     map[string]Action `json:"actions"`
 }
 
 // Action that this plugin can perform
 type Action struct {
-	Name        string
-	Endpoint    string
-	Description string
-	Action      func() string
+	Name        string                     `json:"-"`
+	Endpoint    string                     `json:"endpoint"`
+	Description string                     `json:"description"`
+	Action      func(*http.Request) string `json:"-"`
+	Params      map[string]string          `json:"params"`
 }
 
 // Run the plugin
-func (r Plugin) Run(uri string) {
+func (plug Plugin) Run(uri string) {
 
-	http.HandleFunc("/discovery", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Discovery! %s", time.Now())
-	})
+	http.HandleFunc("/discovery", plug.Discovery)
 
-	for _, elem := range r.Actions {
-		fmt.Println("Registering function", elem.Name)
+	for _, elem := range plug.Actions {
+		log.Println("Registering function", elem.Name)
 		http.HandleFunc(elem.Endpoint, func(w http.ResponseWriter, r *http.Request) {
 			log.Println("Calling function " + elem.Name)
-			res := elem.Action()
+			res := elem.Action(r)
 			w.Header().Set("Content-Type", "application/json")
 			w.Write([]byte(res))
 		})
 	}
 
-	log.Println("Starting plugin " + r.Name + " at address " + uri)
+	log.Println("Starting plugin " + plug.Name + " at address " + uri)
 	log.Fatal(http.ListenAndServe(uri, nil))
 }
 
@@ -52,4 +49,10 @@ func NewPlugin() *Plugin {
 		Name:        filepath.Base(os.Args[0]),
 		Description: "Bottalk Plugin",
 	}
+}
+
+// Discovery shows nice discovery schema
+func (plug Plugin) Discovery(w http.ResponseWriter, r *http.Request) {
+	jsonValue, _ := json.Marshal(plug)
+	w.Write(jsonValue)
 }
