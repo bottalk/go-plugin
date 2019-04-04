@@ -2,6 +2,7 @@ package bottalk
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -31,13 +32,18 @@ func (plug Plugin) Run(uri string) {
 
 	for _, elem := range plug.Actions {
 		log.Println("Registering function", elem.Name)
+		e2 := elem
 		http.HandleFunc(elem.Endpoint, func(w http.ResponseWriter, r *http.Request) {
-			log.Println("Calling function " + elem.Name)
-			res := elem.Action(r)
+			log.Println("Calling function " + e2.Name)
+			res := e2.Action(r)
 			w.Header().Set("Content-Type", "application/json")
 			w.Write([]byte(res))
 		})
 	}
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Api usage only")
+	})
 
 	log.Println("Starting plugin " + plug.Name + " at address " + uri)
 	log.Fatal(http.ListenAndServe(uri, nil))
