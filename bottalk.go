@@ -16,6 +16,11 @@ type Plugin struct {
 	Actions     map[string]Action `json:"actions"`
 }
 
+type ActionOptions struct {
+Input  bool `json:"input"`
+Output bool `json:"output"`
+}
+
 // Action that this plugin can perform
 type Action struct {
 	Name        string                     `json:"-"`
@@ -23,10 +28,7 @@ type Action struct {
 	Description string                     `json:"description"`
 	Action      func(*http.Request) string `json:"-"`
 	Params      map[string]string          `json:"params"`
-	Options     struct {
-		Input  bool `json:"input"`
-		Output bool `json:"output"`
-	} `json:"options"`
+	Options     ActionOptions `json:"options"`
 }
 
 // Run the plugin
