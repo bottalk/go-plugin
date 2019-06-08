@@ -42,7 +42,8 @@ func (plug Plugin) Run(uri string) {
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Api usage only")
+		fmt.Fprint(w, "Api usage only")
+		log.Println("Request to undefined page: " + r.URL.String())
 	})
 
 	log.Println("Starting plugin " + plug.Name + " at address " + uri)
